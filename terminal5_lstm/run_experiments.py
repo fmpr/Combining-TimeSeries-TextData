@@ -227,29 +227,17 @@ def compute_error_filtered(trues, predicted, filt):
 
 if not os.path.exists("results_mae.txt"):
     fw_mae = open("results_mae.txt", "a")
-    fw_mae.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
-    fw_mae.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
-    fw_mae.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
+    fw_mae.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+ET\n")
     fw_rae = open("results_rae.txt", "a")
-    fw_rae.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
-    fw_rae.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
-    fw_rae.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
+    fw_rae.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+ET\n")
     fw_rmse = open("results_rmse.txt", "a")
-    fw_rmse.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
-    fw_rmse.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
-    fw_rmse.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
+    fw_rmse.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+ET\n")
     fw_rrse = open("results_rrse.txt", "a")
-    fw_rrse.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
-    fw_rrse.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
-    fw_rrse.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
+    fw_rrse.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+ET\n")
     fw_mape = open("results_mape.txt", "a")
-    fw_mape.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
-    fw_mape.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
-    fw_mape.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
+    fw_mape.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+ET\n")
     fw_r2 = open("results_r2.txt", "a")
-    fw_r2.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
-    fw_r2.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
-    fw_r2.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
+    fw_r2.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+ET\n")
 else:
     fw_mae = open("results_mae.txt", "a")
     fw_rae = open("results_rae.txt", "a")
@@ -258,94 +246,6 @@ else:
     fw_mape = open("results_mape.txt", "a")
     fw_r2 = open("results_r2.txt", "a")
 
-
-# ---------------------------------------- Linear regression baseline (just lags)
-
-# linear regression (just lags)
-print "\nrunning linear regression with just lags..."
-regr = linear_model.LinearRegression()
-regr.fit(lags_train, y_train)
-preds_lr = regr.predict(lags_test)
-preds_lr = preds_lr * std_test + trend_test
-y_true = y_test * std_test + trend_test
-corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
-print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
-fw_mae.write("%.3f," % (mae,))
-fw_rae.write("%.3f," % (rae,))
-fw_rmse.write("%.3f," % (rmse,))
-fw_rrse.write("%.3f," % (rrse,))
-fw_mape.write("%.3f," % (mape,))
-fw_r2.write("%.3f," % (r2,))
-
-
-# ---------------------------------------- Linear regression with weather
-
-# linear regression lags + weather
-print "\nrunning linear regression with lags + weather..."
-regr = linear_model.LinearRegression()
-regr.fit(np.concatenate([lags_train, weather_feats_train[:,sel]], axis=1), y_train)
-preds_lr = regr.predict(np.concatenate([lags_test, weather_feats_test[:,sel]], axis=1))
-preds_lr = preds_lr * std_test + trend_test
-y_true = y_test * std_test + trend_test
-corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
-print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
-fw_mae.write("%.3f," % (mae,))
-fw_rae.write("%.3f," % (rae,))
-fw_rmse.write("%.3f," % (rmse,))
-fw_rrse.write("%.3f," % (rrse,))
-fw_mape.write("%.3f," % (mape,))
-fw_r2.write("%.3f," % (r2,))
-
-
-# ---------------------------------------- Linear regression with weather + events
-
-# linear regression lags + weather + events
-print "\nrunning linear regression with lags + weather + events..."
-regr = linear_model.LinearRegression()
-regr.fit(np.concatenate([lags_train, weather_feats_train[:,sel], event_feats_train[:,:1]], axis=1), y_train)
-preds_lr = regr.predict(np.concatenate([lags_test, weather_feats_test[:,sel], event_feats_test[:,:1]], axis=1))
-preds_lr = preds_lr * std_test + trend_test
-y_true = y_test * std_test + trend_test
-corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
-print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
-fw_mae.write("%.3f," % (mae,))
-fw_rae.write("%.3f," % (rae,))
-fw_rmse.write("%.3f," % (rmse,))
-fw_rrse.write("%.3f," % (rrse,))
-fw_mape.write("%.3f," % (mape,))
-fw_r2.write("%.3f," % (r2,))
-
-# linear regression lags + weather + events + late
-print "\nrunning linear regression with lags + weather + late..."
-regr = linear_model.LinearRegression()
-regr.fit(np.concatenate([lags_train, weather_feats_train[:,sel], event_feats_train], axis=1), y_train)
-preds_lr = regr.predict(np.concatenate([lags_test, weather_feats_test[:,sel], event_feats_test], axis=1))
-preds_lr = preds_lr * std_test + trend_test
-y_true = y_test * std_test + trend_test
-corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
-print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
-fw_mae.write("%.3f," % (mae,))
-fw_rae.write("%.3f," % (rae,))
-fw_rmse.write("%.3f," % (rmse,))
-fw_rrse.write("%.3f," % (rrse,))
-fw_mape.write("%.3f," % (mape,))
-fw_r2.write("%.3f," % (r2,))
-
-# linear regression lags + weather + events + late + event_lags
-print "\nrunning linear regression with lags + weather + late + event_lags..."
-regr = linear_model.LinearRegression()
-regr.fit(np.concatenate([lags_train, event_feats_train, lags_event_feats_train[:,sel2], weather_feats_train[:,sel]], axis=1), y_train)
-preds_lr = regr.predict(np.concatenate([lags_test, event_feats_test, lags_event_feats_test[:,sel2], weather_feats_test[:,sel]], axis=1))
-preds_lr = preds_lr * std_test + trend_test
-y_true = y_test * std_test + trend_test
-corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
-print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
-fw_mae.write("%.3f," % (mae,))
-fw_rae.write("%.3f," % (rae,))
-fw_rmse.write("%.3f," % (rmse,))
-fw_rrse.write("%.3f," % (rrse,))
-fw_mape.write("%.3f," % (mape,))
-fw_r2.write("%.3f," % (r2,))
 
 
 # ---------------------------------------- LSTM (just lags)
@@ -393,6 +293,7 @@ model.load_weights("weights.best.hdf5")
 # make predictions
 preds_lstm = model.predict(np.concatenate([lags_test[:,:,np.newaxis]], axis=1))
 preds_lstm = preds_lstm[:,0] * std_test + trend_test
+y_true = y_test * std_test + trend_test
 corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lstm)
 print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
 fw_mae.write("%.3f," % (mae,))
@@ -527,92 +428,6 @@ fw_mape.write("%.3f," % (mape,))
 fw_r2.write("%.3f," % (r2,))
 
 
-# ---------------------------------------- LSTM with weather + events information (no text) + late
-
-print "\nrunning LSTM with lags + weather + event + late..."
-
-# checkpoint best model
-checkpoint = ModelCheckpoint("weights.best.hdf5", monitor='val_loss', verbose=0, save_best_only=True, mode='min')
-
-# fit model to the mean
-model, input_lags, preds = build_model_events(1, NUM_LAGS, len(sel)+4, 1)
-model.fit(
-    [lags_train[:,:,np.newaxis], lags_event_feats_train[:,:,np.newaxis], np.concatenate([weather_feats_train[:,sel], event_feats_train], axis=1)],
-    y_train,
-    batch_size=64,
-    epochs=1,
-    validation_data=([lags_val[:,:,np.newaxis], lags_event_feats_val[:,:,np.newaxis], np.concatenate([weather_feats_val[:,sel], event_feats_val], axis=1)], y_val),
-    callbacks=[checkpoint],
-    verbose=0)   
-
-
-print "Total number of iterations:  ", len(model.history.history["loss"])
-print "Best loss at iteratation:    ", np.argmin(model.history.history["loss"]), "   Best:", np.min(model.history.history["loss"])
-print "Best val_loss at iteratation:", np.argmin(model.history.history["val_loss"]), "   Best:", np.min(model.history.history["val_loss"])
-
-# load weights
-model.load_weights("weights.best.hdf5")
-
-print model.evaluate([lags_test[:,:,np.newaxis], lags_event_feats_test[:,:,np.newaxis], np.concatenate([weather_feats_test[:,sel], event_feats_test], axis=1)], 
-                      y_test, verbose=2)
-
-# make predictions
-preds_lstm = model.predict([lags_test[:,:,np.newaxis], lags_event_feats_test[:,:,np.newaxis], np.concatenate([weather_feats_test[:,sel], event_feats_test], axis=1)])
-preds_lstm = preds_lstm[:,0] * std_test + trend_test
-corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lstm)
-print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
-fw_mae.write("%.3f," % (mae,))
-fw_rae.write("%.3f," % (rae,))
-fw_rmse.write("%.3f," % (rmse,))
-fw_rrse.write("%.3f," % (rrse,))
-fw_mape.write("%.3f," % (mape,))
-fw_r2.write("%.3f," % (r2,))
-
-
-# ---------------------------------------- LSTM with weather + events information (no text) + late + event_lags
-
-
-print "\nrunning LSTM with lags + weather + event + late + envet_lags..."
-
-# checkpoint best model
-checkpoint = ModelCheckpoint("weights.best.hdf5", monitor='val_loss', verbose=0, save_best_only=True, mode='min')
-
-# fit model to the mean
-print len(sel)
-print len(sel2)
-print np.concatenate([weather_feats_train[:,sel], event_feats_train, lags_event_feats_train[:,sel2]], axis=1).shape
-model, input_lags, preds = build_model_events(1, NUM_LAGS, len(sel)+4+len(sel2), 1)
-model.fit(
-    [lags_train[:,:,np.newaxis], lags_event_feats_train[:,:,np.newaxis], np.concatenate([weather_feats_train[:,sel], event_feats_train, lags_event_feats_train[:,sel2]], axis=1)],
-    y_train,
-    batch_size=64,
-    epochs=1,
-    validation_data=([lags_val[:,:,np.newaxis], lags_event_feats_val[:,:,np.newaxis], np.concatenate([weather_feats_val[:,sel], event_feats_val, lags_event_feats_val[:,sel2]], axis=1)], y_val),
-    callbacks=[checkpoint],
-    verbose=0)   
-
-print "Total number of iterations:  ", len(model.history.history["loss"])
-print "Best loss at iteratation:    ", np.argmin(model.history.history["loss"]), "   Best:", np.min(model.history.history["loss"])
-print "Best val_loss at iteratation:", np.argmin(model.history.history["val_loss"]), "   Best:", np.min(model.history.history["val_loss"])
-
-# load weights
-model.load_weights("weights.best.hdf5")
-
-print model.evaluate([lags_test[:,:,np.newaxis], lags_event_feats_test[:,:,np.newaxis], np.concatenate([weather_feats_test[:,sel], event_feats_test, lags_event_feats_test[:,sel2]], axis=1)], 
-                      y_test, verbose=2)
-
-# make predictions
-preds_lstm = model.predict([lags_test[:,:,np.newaxis], lags_event_feats_test[:,:,np.newaxis], np.concatenate([weather_feats_test[:,sel], event_feats_test, lags_event_feats_test[:,sel2]], axis=1)])
-preds_lstm = preds_lstm[:,0] * std_test + trend_test
-corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lstm)
-print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
-fw_mae.write("%.3f," % (mae,))
-fw_rae.write("%.3f," % (rae,))
-fw_rmse.write("%.3f," % (rmse,))
-fw_rrse.write("%.3f," % (rrse,))
-fw_mape.write("%.3f," % (mape,))
-fw_r2.write("%.3f," % (r2,))
-
 
 # ---------------------------------------- LSTM with weather + events information (no text) + TEXT
 
@@ -735,52 +550,6 @@ print model.evaluate([lags_test[:,:,np.newaxis], lags_event_feats_test[:,:,np.ne
 # make predictions
 preds_lstm = model.predict([lags_test[:,:,np.newaxis], lags_event_feats_test[:,:,np.newaxis], 
                         np.concatenate([weather_feats_test[:,sel], event_feats_test[:,:1]], axis=1), data_test])
-preds_lstm = preds_lstm[:,0] * std_test + trend_test
-corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lstm)
-print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
-fw_mae.write("%.3f," % (mae,))
-fw_rae.write("%.3f," % (rae,))
-fw_rmse.write("%.3f," % (rmse,))
-fw_rrse.write("%.3f," % (rrse,))
-fw_mape.write("%.3f," % (mape,))
-fw_r2.write("%.3f," % (r2,))
-
-
-# ---------------------------------------- LSTM with weather + events information (no text) + event_lags + TEXT
-
-
-print "\nrunning MLP with lags + weather + events + late + event_lags + text..."
-
-# checkpoint best model
-checkpoint = ModelCheckpoint("weights.best.hdf5", monitor='val_loss', verbose=0, save_best_only=True, mode='min')
-
-# fit model to the mean
-model, input_lags, preds = build_model_text(1, NUM_LAGS, len(sel)+4+len(sel2), 1)
-model.fit(
-    [lags_train[:,:,np.newaxis], lags_event_feats_train[:,:,np.newaxis], 
-    np.concatenate([weather_feats_train[:,sel], event_feats_train, lags_event_feats_train[:,sel2]], axis=1), data_train],
-    y_train,
-    batch_size=64,
-    epochs=1,
-    validation_data=([lags_val[:,:,np.newaxis], lags_event_feats_val[:,:,np.newaxis], 
-        np.concatenate([weather_feats_val[:,sel], event_feats_val, lags_event_feats_val[:,sel2]], axis=1), data_val], y_val),
-    callbacks=[checkpoint],
-    verbose=0)    
-
-print "Total number of iterations:  ", len(model.history.history["loss"])
-print "Best loss at iteratation:    ", np.argmin(model.history.history["loss"]), "   Best:", np.min(model.history.history["loss"])
-print "Best val_loss at iteratation:", np.argmin(model.history.history["val_loss"]), "   Best:", np.min(model.history.history["val_loss"])
-
-# load weights
-model.load_weights("weights.best.hdf5")
-
-print model.evaluate([lags_test[:,:,np.newaxis], lags_event_feats_test[:,:,np.newaxis], 
-                    np.concatenate([weather_feats_test[:,sel], event_feats_test, lags_event_feats_test[:,sel2]], axis=1), data_test], 
-                      y_test, verbose=2)
-
-# make predictions
-preds_lstm = model.predict([lags_test[:,:,np.newaxis], lags_event_feats_test[:,:,np.newaxis], 
-                        np.concatenate([weather_feats_test[:,sel], event_feats_test, lags_event_feats_test[:,sel2]], axis=1), data_test])
 preds_lstm = preds_lstm[:,0] * std_test + trend_test
 corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lstm)
 print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
