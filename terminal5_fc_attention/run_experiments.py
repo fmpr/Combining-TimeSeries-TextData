@@ -29,7 +29,8 @@ sess = tf.Session(config=config)
 # ---------------------------------------- GLOBAL PARAMETERS
 
 NUM_LAGS = 10
-sel = [5,7] # weather features to use
+sel = [0,2,4,5,7,8,9] # weather features to use
+sel = [5,7]
 sel2 = [0,1,2,7] # eventlags featurs to use
 
 # word embeddings parameters
@@ -126,6 +127,8 @@ df_sum.head()
 df_sum["year"] = df_sum.index.year
 
 trend_mean = df_sum[df_sum.index.year < 2015].groupby(["dow"]).mean()["pickups"]
+
+#trend_std = df_sum.groupby(["year"]).std()["pickups"]
 trend_std = df_sum["pickups"].std()
 
 # build vectors with trend to remove and std
@@ -133,6 +136,7 @@ trend = []
 std = []
 for ix, row in df_sum.iterrows():
     trend.append(trend_mean[row.dow])
+    #std.append(trend_std[row.year])
     std.append(trend_std)
 
 df_sum["trend"] = trend
@@ -148,6 +152,7 @@ print "building lags..."
 lags = pd.concat([pd.Series(df_sum["detrended"]).shift(x) for x in range(0,NUM_LAGS)],axis=1).as_matrix()
 event_feats = np.concatenate([df_sum["event_next_day"].as_matrix()[:,np.newaxis],
                              df_sum["late_event"].as_matrix()[:,np.newaxis],
+                             #df_sum["late_event_next_day"].as_matrix()[:,np.newaxis],
                              df_sum["really_late_event"].as_matrix()[:,np.newaxis],
                              df_sum["really_late_event_next_day"].as_matrix()[:,np.newaxis]], axis=1)
 lags_event_feats = pd.concat([pd.Series(df_sum["event_next_day"]).shift(x) for x in range(0,NUM_LAGS)],axis=1).as_matrix()
@@ -172,6 +177,8 @@ stds = stds[NUM_LAGS:-1]
 # ---------------------------------------- Train/test split
 print "loading train/val/test split..."
 
+#i_train = 365*2-90 # 2013 and 2014
+#i_val = 365*2
 i_train = 365*2 # 2013 and 2014
 i_val = 365*3
 i_test = -1 # 2015 and 2016 (everything else)
@@ -228,17 +235,29 @@ def compute_error_filtered(trues, predicted, filt):
 
 if not os.path.exists("results_mae.txt"):
     fw_mae = open("results_mae.txt", "a")
-    fw_mae.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E,MLP L+W+E+ET\n")
+    fw_mae.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
+    fw_mae.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
+    fw_mae.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
     fw_rae = open("results_rae.txt", "a")
-    fw_rae.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E,MLP L+W+E+ET\n")
+    fw_rae.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
+    fw_rae.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
+    fw_rae.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
     fw_rmse = open("results_rmse.txt", "a")
-    fw_rmse.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E,MLP L+W+E+ET\n")
+    fw_rmse.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
+    fw_rmse.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
+    fw_rmse.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
     fw_rrse = open("results_rrse.txt", "a")
-    fw_rrse.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E,MLP L+W+E+ET\n")
+    fw_rrse.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
+    fw_rrse.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
+    fw_rrse.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
     fw_mape = open("results_mape.txt", "a")
-    fw_mape.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E,MLP L+W+E+ET\n")
+    fw_mape.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
+    fw_mape.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
+    fw_mape.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
     fw_r2 = open("results_r2.txt", "a")
-    fw_r2.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E,MLP L+W+E+ET\n")
+    fw_r2.write("LR L,LR L+W,LR L+W+E,LR L+W+E+LF,LR L+W+E+LF+EL,")
+    fw_r2.write("MLP L,MLP L+W,MLP L+W+E,MLP L+W+E+LF,MLP L+W+E+LF+EL,")
+    fw_r2.write("MLP L+W+E+LF+ET,MLP L+W+E+LF+EL+ET\n")
 else:
     fw_mae = open("results_mae.txt", "a")
     fw_rae = open("results_rae.txt", "a")
@@ -246,6 +265,95 @@ else:
     fw_rrse = open("results_rrse.txt", "a")
     fw_mape = open("results_mape.txt", "a")
     fw_r2 = open("results_r2.txt", "a")
+
+
+# ---------------------------------------- Linear regression baseline (just lags)
+
+# linear regression (just lags)
+print "\nrunning linear regression with just lags..."
+regr = linear_model.LinearRegression()
+regr.fit(lags_train, y_train)
+preds_lr = regr.predict(lags_test)
+preds_lr = preds_lr * std_test + trend_test
+y_true = y_test * std_test + trend_test
+corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
+print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
+fw_mae.write("%.3f," % (mae,))
+fw_rae.write("%.3f," % (rae,))
+fw_rmse.write("%.3f," % (rmse,))
+fw_rrse.write("%.3f," % (rrse,))
+fw_mape.write("%.3f," % (mape,))
+fw_r2.write("%.3f," % (r2,))
+
+
+# ---------------------------------------- Linear regression with weather
+
+# linear regression lags + weather
+print "\nrunning linear regression with lags + weather..."
+regr = linear_model.LinearRegression()
+regr.fit(np.concatenate([lags_train, weather_feats_train[:,sel]], axis=1), y_train)
+preds_lr = regr.predict(np.concatenate([lags_test, weather_feats_test[:,sel]], axis=1))
+preds_lr = preds_lr * std_test + trend_test
+y_true = y_test * std_test + trend_test
+corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
+print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
+fw_mae.write("%.3f," % (mae,))
+fw_rae.write("%.3f," % (rae,))
+fw_rmse.write("%.3f," % (rmse,))
+fw_rrse.write("%.3f," % (rrse,))
+fw_mape.write("%.3f," % (mape,))
+fw_r2.write("%.3f," % (r2,))
+
+
+# ---------------------------------------- Linear regression with weather + events
+
+# linear regression lags + weather + events
+print "\nrunning linear regression with lags + weather + events..."
+regr = linear_model.LinearRegression()
+regr.fit(np.concatenate([lags_train, weather_feats_train[:,sel], event_feats_train[:,:1]], axis=1), y_train)
+preds_lr = regr.predict(np.concatenate([lags_test, weather_feats_test[:,sel], event_feats_test[:,:1]], axis=1))
+preds_lr = preds_lr * std_test + trend_test
+y_true = y_test * std_test + trend_test
+corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
+print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
+fw_mae.write("%.3f," % (mae,))
+fw_rae.write("%.3f," % (rae,))
+fw_rmse.write("%.3f," % (rmse,))
+fw_rrse.write("%.3f," % (rrse,))
+fw_mape.write("%.3f," % (mape,))
+fw_r2.write("%.3f," % (r2,))
+
+# linear regression lags + weather + events + late
+print "\nrunning linear regression with lags + weather + late..."
+regr = linear_model.LinearRegression()
+regr.fit(np.concatenate([lags_train, weather_feats_train[:,sel], event_feats_train], axis=1), y_train)
+preds_lr = regr.predict(np.concatenate([lags_test, weather_feats_test[:,sel], event_feats_test], axis=1))
+preds_lr = preds_lr * std_test + trend_test
+y_true = y_test * std_test + trend_test
+corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
+print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
+fw_mae.write("%.3f," % (mae,))
+fw_rae.write("%.3f," % (rae,))
+fw_rmse.write("%.3f," % (rmse,))
+fw_rrse.write("%.3f," % (rrse,))
+fw_mape.write("%.3f," % (mape,))
+fw_r2.write("%.3f," % (r2,))
+
+# linear regression lags + weather + events + late + event_lags
+print "\nrunning linear regression with lags + weather + late + event_lags..."
+regr = linear_model.LinearRegression()
+regr.fit(np.concatenate([lags_train, event_feats_train, lags_event_feats_train[:,sel2], weather_feats_train[:,sel]], axis=1), y_train)
+preds_lr = regr.predict(np.concatenate([lags_test, event_feats_test, lags_event_feats_test[:,sel2], weather_feats_test[:,sel]], axis=1))
+preds_lr = preds_lr * std_test + trend_test
+y_true = y_test * std_test + trend_test
+corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lr)
+print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
+fw_mae.write("%.3f," % (mae,))
+fw_rae.write("%.3f," % (rae,))
+fw_rmse.write("%.3f," % (rmse,))
+fw_rrse.write("%.3f," % (rrse,))
+fw_mape.write("%.3f," % (mape,))
+fw_r2.write("%.3f," % (r2,))
 
 
 # ---------------------------------------- MLP (just lags)
@@ -256,11 +364,25 @@ def build_model(num_inputs, num_lags, num_preds):
     x = input_lags
     x = BatchNormalization()(x)
     x = Dense(units=100, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.05))(x)
+    #x = Dense(units=50, activation="tanh")(x)
+    #x = BatchNormalization()(x)
     x = Dropout(0.5)(x)
+    #x = BatchNormalization()(x)
+    #x = Dense(units=50, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.05))(x)
+    #x = Dense(units=50, activation="tanh")(x)
+    #x = BatchNormalization()(x)
+    #x = Dropout(0.5)(x)
+    #x = BatchNormalization()(x)
+    #preds = Dense(units=num_preds, kernel_regularizer=keras.regularizers.l2(0.01))(x)
     preds = Dense(units=num_preds)(x)
     
     model = Model(input_lags, preds)
+    
+    #adamopt = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.001)
+    #model.compile(loss="mse", optimizer=adamopt)
+    #rmsp = keras.optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
     model.compile(loss="mse", optimizer="adam")
+    #model.compile(loss="mse", optimizer="rmsprop")
     
     return model, input_lags, preds
 
@@ -272,10 +394,13 @@ checkpoint = ModelCheckpoint("weights.best.hdf5", monitor='val_loss', verbose=0,
 
 model, input_lags, preds = build_model(1, NUM_LAGS, 1)
 model.fit(
+    #lags_train,
     np.concatenate([lags_train], axis=1),
     y_train,
     batch_size=64,
     epochs=500,
+    #validation_split=0.2,
+    #validation_data=(lags_val, y_val),
     validation_data=(np.concatenate([lags_val], axis=1), y_val),
     callbacks=[checkpoint],
     verbose=0)   
@@ -290,7 +415,6 @@ model.load_weights("weights.best.hdf5")
 # make predictions
 preds_lstm = model.predict(np.concatenate([lags_test[:,:]], axis=1))
 preds_lstm = preds_lstm[:,0] * std_test + trend_test
-y_true = y_test * std_test + trend_test
 corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lstm)
 print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
 fw_mae.write("%.3f," % (mae,))
@@ -315,6 +439,8 @@ model.fit(
     y_train,
     batch_size=64,
     epochs=500,
+    #validation_split=0.2,
+    #validation_data=(lags_val, y_val),
     validation_data=(np.concatenate([lags_val, weather_feats_val[:,sel]], axis=1), y_val),
     callbacks=[checkpoint],
     verbose=0)   
@@ -339,6 +465,131 @@ fw_mape.write("%.3f," % (mape,))
 fw_r2.write("%.3f," % (r2,))
 
 
+# ---------------------------------------- MLP with weather + events information (no text)
+
+def build_model_events(num_inputs, num_lags, num_feat, num_preds):
+    input_lags = Input(shape=(num_lags,))
+    input_events = Input(shape=(num_feat,))
+    
+    feat = Concatenate(axis=1)([input_lags, input_events])
+    
+    x = feat
+    x = BatchNormalization()(x)
+    x = Dense(units=100, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.05))(x)
+    #x = Dense(units=50, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.1))(x)
+    #x = BatchNormalization()(x)
+    x = Dropout(0.5)(x)
+    #x = BatchNormalization()(x)
+    #x = Dense(units=50, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.1))(x)
+    #x = BatchNormalization()(x)
+    #x = Dropout(0.5)(x)
+    #x = BatchNormalization()(x)
+    
+    preds = Dense(units=num_preds)(x)
+    #preds = Dense(units=num_preds, kernel_regularizer=keras.regularizers.l2(0.2))(x)
+    preds = Activation("linear")(preds)
+    
+    model = Model([input_lags, input_events], preds)
+    
+    rmsp = keras.optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
+    #model.compile(loss="mse", optimizer=rmsp)
+    model.compile(loss="mse", optimizer="adam")
+    
+    return model, input_lags, preds
+
+
+print "\nrunning MLP with lags + weather + event..."
+
+# checkpoint best model
+checkpoint = ModelCheckpoint("weights.best.hdf5", monitor='val_loss', verbose=0, save_best_only=True, mode='min')
+
+# fit model to the mean
+model, input_lags, preds = build_model_events(1, NUM_LAGS+len(sel), 1, 1)
+#print model_weather.summary()
+model.fit(
+    [np.concatenate([lags_train, weather_feats_train[:,sel]], axis=1), 
+     np.concatenate([event_feats_train[:,:1]], axis=1)],
+    y_train,
+    batch_size=64,
+    epochs=500,
+    #validation_split=0.2,
+    validation_data=([np.concatenate([lags_val, weather_feats_val[:,sel]], axis=1), 
+                      np.concatenate([event_feats_val[:,:1]], axis=1)], y_val),
+    callbacks=[checkpoint],
+    verbose=0)   
+
+print "Total number of iterations:  ", len(model.history.history["loss"])
+print "Best loss at iteratation:    ", np.argmin(model.history.history["loss"]), "   Best:", np.min(model.history.history["loss"])
+print "Best val_loss at iteratation:", np.argmin(model.history.history["val_loss"]), "   Best:", np.min(model.history.history["val_loss"])
+
+# load weights
+model.load_weights("weights.best.hdf5")
+
+print model.evaluate([np.concatenate([lags_test[:,:], weather_feats_test[:,sel]], axis=1), 
+                      np.concatenate([event_feats_test[:,:1]], axis=1)], 
+                      y_test, verbose=2)
+
+# make predictions
+preds_lstm = model.predict([np.concatenate([lags_test[:,:], weather_feats_test[:,sel]], axis=1), 
+                            np.concatenate([event_feats_test[:,:1]], axis=1)])
+preds_lstm = preds_lstm[:,0] * std_test + trend_test
+corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lstm)
+print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
+fw_mae.write("%.3f," % (mae,))
+fw_rae.write("%.3f," % (rae,))
+fw_rmse.write("%.3f," % (rmse,))
+fw_rrse.write("%.3f," % (rrse,))
+fw_mape.write("%.3f," % (mape,))
+fw_r2.write("%.3f," % (r2,))
+
+
+# ---------------------------------------- MLP with weather + events information (no text) + late
+
+print "\nrunning MLP with lags + weather + event + late..."
+
+# checkpoint best model
+checkpoint = ModelCheckpoint("weights.best.hdf5", monitor='val_loss', verbose=0, save_best_only=True, mode='min')
+
+# fit model to the mean
+model, input_lags, preds = build_model_events(1, NUM_LAGS+len(sel), 4, 1)
+#print model_weather.summary()
+model.fit(
+    [np.concatenate([lags_train, weather_feats_train[:,sel]], axis=1), 
+     np.concatenate([event_feats_train], axis=1)],
+    y_train,
+    batch_size=64,
+    epochs=500,
+    #validation_split=0.2,
+    validation_data=([np.concatenate([lags_val, weather_feats_val[:,sel]], axis=1), 
+                      np.concatenate([event_feats_val], axis=1)], y_val),
+    callbacks=[checkpoint],
+    verbose=0)   
+
+print "Total number of iterations:  ", len(model.history.history["loss"])
+print "Best loss at iteratation:    ", np.argmin(model.history.history["loss"]), "   Best:", np.min(model.history.history["loss"])
+print "Best val_loss at iteratation:", np.argmin(model.history.history["val_loss"]), "   Best:", np.min(model.history.history["val_loss"])
+
+# load weights
+model.load_weights("weights.best.hdf5")
+
+print model.evaluate([np.concatenate([lags_test[:,:], weather_feats_test[:,sel]], axis=1), 
+                      np.concatenate([event_feats_test[:,:]], axis=1)], 
+                      y_test, verbose=2)
+
+# make predictions
+preds_lstm = model.predict([np.concatenate([lags_test[:,:], weather_feats_test[:,sel]], axis=1), 
+                            np.concatenate([event_feats_test[:,:]], axis=1)])
+preds_lstm = preds_lstm[:,0] * std_test + trend_test
+corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lstm)
+print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
+fw_mae.write("%.3f," % (mae,))
+fw_rae.write("%.3f," % (rae,))
+fw_rmse.write("%.3f," % (rmse,))
+fw_rrse.write("%.3f," % (rrse,))
+fw_mape.write("%.3f," % (mape,))
+fw_r2.write("%.3f," % (r2,))
+
+
 # ---------------------------------------- MLP with weather + events information (no text) + late + event_lags
 
 
@@ -349,12 +600,14 @@ checkpoint = ModelCheckpoint("weights.best.hdf5", monitor='val_loss', verbose=0,
 
 # fit model to the mean
 model, input_lags, preds = build_model_events(1, NUM_LAGS+len(sel), 4+len(sel2), 1)
+#print model_weather.summary()
 model.fit(
     [np.concatenate([lags_train, weather_feats_train[:,sel]], axis=1), 
      np.concatenate([event_feats_train[:,:], lags_event_feats_train[:,sel2]], axis=1)],
     y_train,
     batch_size=64,
     epochs=500,
+    #validation_split=0.2,
     validation_data=([np.concatenate([lags_val, weather_feats_val[:,sel]], axis=1), 
                       np.concatenate([event_feats_val[:,:], lags_event_feats_val[:,sel2]], axis=1)], y_val),
     callbacks=[checkpoint],
@@ -384,6 +637,8 @@ fw_rrse.write("%.3f," % (rrse,))
 fw_mape.write("%.3f," % (mape,))
 fw_r2.write("%.3f," % (r2,))
 
+
+# ---------------------------------------- MLP with weather + events information (no text) + TEXT
 
 print "\npreparing word embeddings for NNs with text..."
 
@@ -428,9 +683,7 @@ for word, i in word_index.items():
         embedding_matrix[i] = embedding_vector
 
 
-# ---------------------------------------- MLP with weather + events information (no text) + event_lags + TEXT
-
-def build_model_text_v2(num_inputs, num_lags, num_feat, num_preds):
+def build_model_text(num_inputs, num_lags, num_feat, num_preds):
     input_lags = Input(shape=(num_lags,))
     input_events = Input(shape=(num_feat,))
     
@@ -440,6 +693,12 @@ def build_model_text_v2(num_inputs, num_lags, num_feat, num_preds):
     x = x_lags
     x = BatchNormalization()(x)
     x = Dense(units=100, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.05))(x)
+    #x = Dense(units=50, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.1))(x)
+    #x = BatchNormalization()(x)
+    #x = Dropout(0.5)(x)
+    #x = BatchNormalization()(x)
+    #x = Dense(units=50, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.1))(x)
+    #x = BatchNormalization()(x)
     x = Dropout(0.5)(x)
     x_lags = BatchNormalization()(x)
     #x_lags = x
@@ -460,30 +719,193 @@ def build_model_text_v2(num_inputs, num_lags, num_feat, num_preds):
     x = Conv1D(30, 5, activation='relu')(x)
     x = MaxPooling1D(5)(x)
     x = Dropout(0.5)(x)
+    #x = Conv1D(50, 5, activation='relu')(x)
+    #x = MaxPooling1D(5)(x)
     text_embedding = Flatten()(x)
+    #text_embedding = Dropout(0.5)(text_embedding)
+    #text_embedding = Dense(units=100, activation='relu')(text_embedding)
+    #text_embedding = Dropout(0.5)(text_embedding)
     
+    print "text_embedding:", text_embedding
+    #temp1 = Permute([1,2])(RepeatVector(180)(BatchNormalization()(text_embedding)))
     temp1 = Reshape((1,180))(text_embedding)
     temp1 = Permute([2,1])(temp1)
+    print "temp1:", temp1
     
+    print "x_lags:", x_lags
     temp2 = Permute([1,2])(RepeatVector(180)(BatchNormalization()(x_lags)))
     temp2 = Dropout(0.5)(temp2)
+    print "temp2:", temp2
     
     temp = Concatenate(axis=2)([temp1, temp2])
+    print "concatenated:", temp
     temp = Dense(1, activation="tanh")(temp)
+    #temp = Permute([2,1])(temp)
+    print "after tanh:", temp
     temp = Reshape((180,))(temp)
     temp = BatchNormalization()(temp)
+    print temp
     attention_probs = Activation("softmax")(temp)
+    #print fail
 
+    #attention_probs = Dense(180, activation='softmax', name='attention_vec')(text_embedding)
     attention_mul = merge([text_embedding, attention_probs], output_shape=180, name='attention_mul', mode='mul')
     attention_mul = BatchNormalization()(attention_mul)
+    #attention_mul = Dropout(0.5)(attention_mul)
     
     feat = Concatenate(axis=1)([x_lags, attention_mul])
+    
     feat = BatchNormalization()(feat)
+    #feat = Dense(units=50, activation='relu')(feat)
+    #feat = Dropout(0.5)(feat)
     
     preds = Dense(units=num_preds)(feat)
+    #preds = Dense(units=num_preds, kernel_regularizer=keras.regularizers.l2(0.2))(feat)
     preds = Activation("linear")(preds)
     
     model = Model([input_lags, input_events, sequence_input], preds)
+    
+    rmsp = keras.optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
+    #model.compile(loss="mse", optimizer=rmsp)
+    model.compile(loss="mse", optimizer="adam")
+    
+    return model, input_lags, preds
+
+
+print "\nrunning MLP with lags + weather + events + late + text..."
+
+# checkpoint best model
+checkpoint = ModelCheckpoint("weights.best.hdf5", monitor='val_loss', verbose=0, save_best_only=True, mode='min')
+
+# fit model to the mean
+model, input_lags, preds = build_model_text(1, NUM_LAGS+len(sel), 4, 1)
+model.fit(
+    [np.concatenate([lags_train, weather_feats_train[:,sel]], axis=1), 
+     np.concatenate([event_feats_train[:,:]], axis=1),
+     data_train],
+    y_train,
+    batch_size=64,
+    epochs=700,
+    #validation_split=0.2,
+    validation_data=([np.concatenate([lags_val, weather_feats_val[:,sel]], axis=1), 
+                      np.concatenate([event_feats_val[:,:]], axis=1),
+                      data_val], y_val),
+    callbacks=[checkpoint],
+    verbose=0)   
+
+print "Total number of iterations:  ", len(model.history.history["loss"])
+print "Best loss at iteratation:    ", np.argmin(model.history.history["loss"]), "   Best:", np.min(model.history.history["loss"])
+print "Best val_loss at iteratation:", np.argmin(model.history.history["val_loss"]), "   Best:", np.min(model.history.history["val_loss"])
+
+# load weights
+model.load_weights("weights.best.hdf5")
+
+print model.evaluate([np.concatenate([lags_test[:,:], weather_feats_test[:,sel]], axis=1), 
+                      np.concatenate([event_feats_test[:,:]], axis=1),
+                      data_test],
+                      y_test, verbose=2)
+
+# make predictions
+preds_lstm = model.predict([np.concatenate([lags_test[:,:], weather_feats_test[:,sel]], axis=1), 
+                            np.concatenate([event_feats_test[:,:]], axis=1),
+                            data_test])
+preds_lstm = preds_lstm[:,0] * std_test + trend_test
+corr, mae, rae, rmse, rrse, mape, r2 = compute_error(y_true, preds_lstm)
+print "MAE:  %.3f\tRMSE: %.3f\tR2:   %.3f" % (mae, rmse, r2)
+fw_mae.write("%.3f," % (mae,))
+fw_rae.write("%.3f," % (rae,))
+fw_rmse.write("%.3f," % (rmse,))
+fw_rrse.write("%.3f," % (rrse,))
+fw_mape.write("%.3f," % (mape,))
+fw_r2.write("%.3f," % (r2,))
+
+
+# ---------------------------------------- MLP with weather + events information (no text) + event_lags + TEXT
+
+def build_model_text_v2(num_inputs, num_lags, num_feat, num_preds):
+    input_lags = Input(shape=(num_lags,))
+    input_events = Input(shape=(num_feat,))
+    
+    x_lags = Concatenate(axis=1)([input_lags, input_events])
+    #x_lags = BatchNormalization()(x_lags)
+    
+    x = x_lags
+    x = BatchNormalization()(x)
+    x = Dense(units=100, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.05))(x)
+    #x = Dense(units=50, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.1))(x)
+    #x = BatchNormalization()(x)
+    #x = Dropout(0.5)(x)
+    #x = BatchNormalization()(x)
+    #x = Dense(units=50, activation="tanh", kernel_regularizer=keras.regularizers.l2(0.1))(x)
+    #x = BatchNormalization()(x)
+    x = Dropout(0.5)(x)
+    x_lags = BatchNormalization()(x)
+    #x_lags = x
+    
+    sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
+    embedding_layer = Embedding(num_words,
+                                EMBEDDING_DIM,
+                                weights=[embedding_matrix],
+                                input_length=MAX_SEQUENCE_LENGTH,
+                                trainable=True)
+    embedded_sequences = embedding_layer(sequence_input)
+    x = Conv1D(50, 3, activation='relu')(embedded_sequences)
+    x = MaxPooling1D(3)(x)
+    x = Dropout(0.5)(x)
+    x = Conv1D(30, 3, activation='relu')(x)
+    x = MaxPooling1D(3)(x)
+    x = Dropout(0.5)(x)
+    x = Conv1D(30, 5, activation='relu')(x)
+    x = MaxPooling1D(5)(x)
+    x = Dropout(0.5)(x)
+    #x = Conv1D(50, 5, activation='relu')(x)
+    #x = MaxPooling1D(5)(x)
+    text_embedding = Flatten()(x)
+    #text_embedding = Dropout(0.5)(text_embedding)
+    #text_embedding = Dense(units=100, activation='relu')(text_embedding)
+    #text_embedding = Dropout(0.5)(text_embedding)
+    
+    print "text_embedding:", text_embedding
+    #temp1 = Permute([1,2])(RepeatVector(180)(BatchNormalization()(text_embedding)))
+    temp1 = Reshape((1,180))(text_embedding)
+    temp1 = Permute([2,1])(temp1)
+    print "temp1:", temp1
+    
+    print "x_lags:", x_lags
+    temp2 = Permute([1,2])(RepeatVector(180)(BatchNormalization()(x_lags)))
+    temp2 = Dropout(0.5)(temp2)
+    print "temp2:", temp2
+    
+    temp = Concatenate(axis=2)([temp1, temp2])
+    print "concatenated:", temp
+    temp = Dense(1, activation="tanh")(temp)
+    #temp = Permute([2,1])(temp)
+    print "after tanh:", temp
+    temp = Reshape((180,))(temp)
+    temp = BatchNormalization()(temp)
+    print temp
+    attention_probs = Activation("softmax")(temp)
+    #print fail
+
+    #attention_probs = Dense(180, activation='softmax', name='attention_vec')(text_embedding)
+    attention_mul = merge([text_embedding, attention_probs], output_shape=180, name='attention_mul', mode='mul')
+    attention_mul = BatchNormalization()(attention_mul)
+    #attention_mul = Dropout(0.5)(attention_mul)
+    
+    feat = Concatenate(axis=1)([x_lags, attention_mul])
+    
+    feat = BatchNormalization()(feat)
+    #feat = Dense(units=50, activation='relu')(feat)
+    #feat = Dropout(0.5)(feat)
+    
+    preds = Dense(units=num_preds)(feat)
+    #preds = Dense(units=num_preds, kernel_regularizer=keras.regularizers.l2(0.2))(feat)
+    preds = Activation("linear")(preds)
+    
+    model = Model([input_lags, input_events, sequence_input], preds)
+    
+    rmsp = keras.optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
+    #model.compile(loss="mse", optimizer=rmsp)
     model.compile(loss="mse", optimizer="adam")
     
     return model, input_lags, preds
